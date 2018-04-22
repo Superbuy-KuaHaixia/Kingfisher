@@ -40,14 +40,14 @@ public typealias ImageDownloaderCompletionHandler = ((_ image: Image?, _ error: 
 public struct RetrieveImageDownloadTask {
     let internalTask: URLSessionDataTask
     
-    /// Downloader by which this task is intialized.
+    /// Downloader by which this task is initialized.
     public private(set) weak var ownerDownloader: ImageDownloader?
 
-    /**
-     Cancel this download task. It will trigger the completion handler with an NSURLErrorCancelled error.
-     */
+    
+    /// Cancel this download task. It will trigger the completion handler with an NSURLErrorCancelled error.
+    /// If you want to cancel all downloading tasks, call `cancelAll()` of `ImageDownloader` instance.
     public func cancel() {
-        ownerDownloader?.cancelDownloadingTask(self)
+        ownerDownloader?.cancel(self)
     }
     
     /// The original request URL of this download task.
@@ -75,7 +75,7 @@ public enum KingfisherError: Int {
     /// badData: The downloaded data is not an image or the data is corrupted.
     case badData = 10000
     
-    /// notModified: The remote server responsed a 304 code. No image data downloaded.
+    /// notModified: The remote server responded a 304 code. No image data downloaded.
     case notModified = 10001
     
     /// The HTTP status code in response is not valid. If an invalid
@@ -83,7 +83,7 @@ public enum KingfisherError: Int {
     /// in `userInfo` to see the code.
     case invalidStatusCode = 10002
     
-    /// notCached: The image rquested is not in cache but .onlyFromCache is activated.
+    /// notCached: The image requested is not in cache but .onlyFromCache is activated.
     case notCached = 10003
     
     /// The URL is invalid.
@@ -228,11 +228,11 @@ open class ImageDownloader {
     
     /// A set of trusted hosts when receiving server trust challenges. A challenge with host name contained in this set will be ignored. 
     /// You can use this set to specify the self-signed site. It only will be used if you don't specify the `authenticationChallengeResponder`. 
-    /// If `authenticationChallengeResponder` is set, this property will be ignored and the implemention of `authenticationChallengeResponder` will be used instead.
+    /// If `authenticationChallengeResponder` is set, this property will be ignored and the implementation of `authenticationChallengeResponder` will be used instead.
     open var trustedHosts: Set<String>?
     
     /// Use this to set supply a configuration for the downloader. By default, NSURLSessionConfiguration.ephemeralSessionConfiguration() will be used. 
-    /// You could change the configuration before a downloaing task starts. A configuration without persistent storage for caches is requsted for downloader working correctly.
+    /// You could change the configuration before a downloading task starts. A configuration without persistent storage for caches is requested for downloader working correctly.
     open var sessionConfiguration = URLSessionConfiguration.ephemeral {
         didSet {
             session?.invalidateAndCancel()
@@ -240,7 +240,7 @@ open class ImageDownloader {
         }
     }
     
-    /// Whether the download requests should use pipeling or not. Default is false.
+    /// Whether the download requests should use pipline or not. Default is false.
     open var requestsUsePipelining = false
     
     fileprivate let sessionHandler: ImageDownloaderSessionHandler
@@ -303,7 +303,7 @@ open class ImageDownloader {
      Download an image with a URL and option.
      
      - parameter url:               Target URL.
-     - parameter retrieveImageTask: The task to cooporate with cache. Pass `nil` if you are not trying to use downloader and cache.
+     - parameter retrieveImageTask: The task to cooperate with cache. Pass `nil` if you are not trying to use downloader and cache.
      - parameter options:           The options could control download behavior. See `KingfisherOptionsInfo`.
      - parameter progressBlock:     Called when the download progress updated.
      - parameter completionHandler: Called when the download progress finishes.
@@ -336,7 +336,7 @@ open class ImageDownloader {
             request = r
         }
         
-        // There is a possiblility that request modifier changed the url to `nil` or empty.
+        // There is a possibility that request modifier changed the url to `nil` or empty.
         guard let url = request.url, !url.absoluteString.isEmpty else {
             completionHandler?(nil, NSError(domain: KingfisherErrorDomain, code: KingfisherError.invalidURL.rawValue, userInfo: nil), nil, nil)
             return nil
@@ -402,13 +402,42 @@ extension ImageDownloader {
         }
     }
     
-    func cancelDownloadingTask(_ task: RetrieveImageDownloadTask) {
+    private func cancelTaskImpl(_ task: RetrieveImageDownloadTask, fetchLoad: ImageFetchLoad? = nil, ignoreTaskCount: Bool = false) {
+        
+        func getFetchLoad(from task: RetrieveImageDownloadTask) -> ImageFetchLoad? {
+            guard let URL = task.internalTask.originalRequest?.url,
+                  let imageFetchLoad = self.fetchLoads[URL] else
+            {
+                return nil
+            }
+            return imageFetchLoad
+        }
+        
+        guard let imageFetchLoad = fetchLoad ?? getFetchLoad(from: task) else {
+            return
+        }
+
+        imageFetchLoad.downloadTaskCount -= 1
+        if ignoreTaskCount || imageFetchLoad.downloadTaskCount == 0 {
+            task.internalTask.cancel()
+        }
+    }
+    
+    func cancel(_ task: RetrieveImageDownloadTask) {
+        barrierQueue.sync(flags: .barrier) { cancelTaskImpl(task) }
+    }
+    
+    /// Cancel all downloading tasks. It will trigger the completion handlers for all not-yet-finished
+    /// downloading tasks with an NSURLErrorCancelled error.
+    ///
+    /// If you need to only cancel a certain task, call `cancel()` on the `RetrieveImageDownloadTask`
+    /// returned by the downloading methods.
+    public func cancelAll() {
         barrierQueue.sync(flags: .barrier) {
-            if let URL = task.internalTask.originalRequest?.url, let imageFetchLoad = self.fetchLoads[URL] {
-                imageFetchLoad.downloadTaskCount -= 1
-                if imageFetchLoad.downloadTaskCount == 0 {
-                    task.internalTask.cancel()
-                }
+            fetchLoads.forEach { v in
+                let fetchLoad = v.value
+                guard let task = fetchLoad.downloadTask else { return }
+                cancelTaskImpl(task, fetchLoad: fetchLoad, ignoreTaskCount: true)
             }
         }
     }

@@ -17,12 +17,12 @@ Pod::Spec.new do |s|
                    * A category over `UIImageView` for setting image from an url directly.
                    DESC
 
-  s.homepage     = "https://github.com/onevcat/Kingfisher"
-  s.screenshots  = "https://raw.githubusercontent.com/onevcat/Kingfisher/master/images/logo.png"
+  s.homepage     = "https://github.com/woodtengfei/Kingfisher"
+  s.screenshots  = "https://raw.githubusercontent.com/woodtengfei/Kingfisher/master/images/logo.png"
 
   s.license      = { :type => "MIT", :file => "LICENSE" }
 
-  s.authors            = { "onevcat" => "onevcat@gmail.com" }
+  s.authors            = { "onevcat" => "woodtengfei@gmail.com" }
   s.social_media_url   = "https://twitter.com/onevcat"
 
   s.swift_version = "4.2"
@@ -33,7 +33,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = "10.12"
   s.watchos.deployment_target = "3.0"
 
-  s.source       = { :git => "https://github.com/onevcat/Kingfisher.git", :tag => s.version }
+  s.source       = { :git => "https://github.com/woodtengfei/Kingfisher.git", :tag => s.version }
   
   s.source_files  = ["Sources/**/*.swift", "Sources/Kingfisher.h"]
   s.public_header_files = ["Sources/Kingfisher.h"]

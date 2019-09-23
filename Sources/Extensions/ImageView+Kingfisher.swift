@@ -80,6 +80,7 @@ extension KingfisherWrapper where Base: ImageView {
         progressBlock: DownloadProgressBlock? = nil,
         completionHandler: ((Result<RetrieveImageResult, KingfisherError>) -> Void)? = nil) -> DownloadTask?
     {
+        let originOptions = options
         var mutatingSelf = self
         guard let source = source else {
             mutatingSelf.placeholder = placeholder
@@ -154,9 +155,20 @@ extension KingfisherWrapper where Base: ImageView {
                             completionHandler?(result)
                         }
                         
-                    case .failure:
+                    case .failure(let error):
                         if let image = options.onFailureImage {
                             self.base.image = image
+                        }
+                        // 针对Superbuy项目的特殊处理，如果设置了原链接，下载失败时用原链接重试一次
+                        if let originURL = (try? result.get().source.asResource as? ImageResource)??.originURL {
+                            print("Kingfisher下载图片失败尝试用原链接下载\n失败原因：\(error.failureReason ?? "") \n原链接URL：\(originURL.absoluteString)\n")
+                            self.setImage(
+                                with: .network(ImageResource(downloadURL: originURL)),
+                                placeholder: placeholder,
+                                options: originOptions,
+                                progressBlock: progressBlock,
+                                completionHandler: completionHandler)
+                            return
                         }
                         completionHandler?(result)
                     }

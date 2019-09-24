@@ -38,6 +38,25 @@ public protocol Resource {
     var downloadURL: URL { get }
 }
 
+/// Superbuy Image URL
+/// 包含不同环境下适配后的URLString和原始图片URLString
+public struct SBImageURL {
+    /// 不同环境下适配后的URLString
+    public let urlStr: String
+    /// 原始图片URLString
+    public let rawValue: String
+    
+    /// Creates an image url.
+    ///
+    /// - Parameters:
+    ///   - urlStr: 不同环境下适配后的URLString
+    ///   - rawValue: 原始图片URLString
+    public init(urlStr: String, rawValue: String) {
+        self.urlStr = urlStr
+        self.rawValue = rawValue
+    }
+}
+
 /// ImageResource is a simple combination of `downloadURL` and `cacheKey`.
 /// When passed to image view set methods, Kingfisher will try to download the target
 /// image from the `downloadURL`, and then store it with the `cacheKey` as the key in cache.
@@ -51,9 +70,9 @@ public struct ImageResource: Resource {
     /// The origin image URL.
     public let originURL: URL?
     
-
+    
     // MARK: - Initializers
-
+    
     /// Creates an image resource.
     ///
     /// - Parameters:
@@ -64,6 +83,23 @@ public struct ImageResource: Resource {
         self.downloadURL = downloadURL
         self.cacheKey = cacheKey ?? downloadURL.absoluteString
         self.originURL = nil
+    }
+    
+    
+    /// Creates an image resource.
+    ///
+    /// - Parameters:
+    ///   - imageURL: The target image URL from where the image can be downloaded.
+    public init?(imageURL: SBImageURL?) {
+        guard let imageURL = imageURL else { return nil }
+        let originURL = URL(string: imageURL.rawValue)
+        if let url = URL(string: imageURL.urlStr) {
+            downloadURL = url
+            cacheKey = downloadURL.absoluteString
+            self.originURL = originURL
+        } else {
+            return nil
+        }
     }
     
     /// Create a resource.

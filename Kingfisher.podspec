@@ -35,33 +35,8 @@ Pod::Spec.new do |s|
 
   s.source       = { :git => "https://github.com/woodtengfei/Kingfisher.git", :tag => s.version }
   
-  s.source_files  = ["Sources/**/*.swift", "Sources/Kingfisher.h"]
-  s.public_header_files = ["Sources/Kingfisher.h"]
-  
-  s.osx.exclude_files = [
-      "Sources/Views/AnimatedImageView.swift", 
-      "Sources/Extensions/UIButton+Kingfisher.swift", 
-      "Sources/Extensions/WKInterfaceImage+Kingfisher.swift"
-    ]
-  s.watchos.exclude_files = [
-      "Sources/Views/AnimatedImageView.swift", 
-      "Sources/Extensions/UIButton+Kingfisher.swift", 
-      "Sources/Extensions/ImageView+Kingfisher.swift", 
-      "Sources/Extensions/NSButton+Kingfisher.swift", 
-      "Sources/Views/Indicator.swift", 
-      "Sources/Image/Filter.swift",
-      "Sources/Image/Placeholder.swift"
-    ]
-  s.ios.exclude_files = [
-      "Sources/Extensions/NSButton+Kingfisher.swift", 
-      "Sources/Extensions/WKInterfaceImage+Kingfisher.swift"
-    ]
-  s.tvos.exclude_files = [
-      "Sources/Extensions/NSButton+Kingfisher.swift", 
-      "Sources/Extensions/WKInterfaceImage+Kingfisher.swift"
-    ]
-
   s.default_subspecs = "Core"
+
   s.requires_arc = true
   s.frameworks = "CFNetwork", "Accelerate"
 
@@ -80,5 +55,5 @@ Pod::Spec.new do |s|
     sp.watchos.deployment_target = "6.0"
     sp.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS' => '-DKingfisherCocoaPods' }
   end
-
+  
 end

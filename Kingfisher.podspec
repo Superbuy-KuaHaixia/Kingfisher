@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "Kingfisher"
-  s.version      = "5.7.1"
+  s.version      = "5.14.0"
   s.summary      = "A lightweight and pure Swift implemented library for downloading and cacheing image from the web."
 
   s.description  = <<-DESC
@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
   s.authors            = { "onevcat" => "woodtengfei@gmail.com" }
   s.social_media_url   = "https://twitter.com/onevcat"
 
-  s.swift_version = "4.2"
+  s.swift_version = "5.0"
   s.swift_versions = ['4.0', '4.2', '5.0']
 
   s.ios.deployment_target = "10.0"
@@ -60,7 +60,25 @@ Pod::Spec.new do |s|
       "Sources/Extensions/NSButton+Kingfisher.swift", 
       "Sources/Extensions/WKInterfaceImage+Kingfisher.swift"
     ]
+
+  s.default_subspecs = "Core"
   s.requires_arc = true
   s.frameworks = "CFNetwork", "Accelerate"
+
+  s.subspec "Core" do |sp|
+    sp.source_files  = ["Sources/**/*.swift", "Sources/Kingfisher.h"]
+    sp.exclude_files = ["Sources/SwiftUI/**"]
+  end
+
+  s.subspec "SwiftUI" do |sp|
+    sp.source_files = ["Sources/SwiftUI/**"]
+    sp.exclude_files = ["Sources/SwiftUI/Delegate.swift"]
+    sp.dependency "Kingfisher/Core"
+    sp.ios.deployment_target = "13.0"
+    sp.tvos.deployment_target = "13.0"
+    sp.osx.deployment_target = "10.15"
+    sp.watchos.deployment_target = "6.0"
+    sp.pod_target_xcconfig = { 'OTHER_SWIFT_FLAGS' => '-DKingfisherCocoaPods' }
+  end
 
 end
